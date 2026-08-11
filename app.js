@@ -21,7 +21,9 @@ function loadTodos() {
     try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
-            todos = JSON.parse(saved);
+            const parsed = JSON.parse(saved);
+            // 防止数据格式异常导致页面报错
+            todos = Array.isArray(parsed) ? parsed : [];
         }
     } catch (e) {
         // 数据损坏时静默重置
