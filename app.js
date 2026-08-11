@@ -14,6 +14,7 @@ const STORAGE_KEY = 'todo-app-data';
 
 let todos = [];               // 每个 todo: { id, text, completed }
 let currentFilter = 'all';    // 当前筛选：'all' | 'active' | 'completed'
+let editingId = null;         // 当前正在编辑的事项 ID（null = 无）
 
 // ===== 功能 6：数据持久化 =====
 /** 从 localStorage 加载数据 */
@@ -42,6 +43,7 @@ function saveTodos() {
 
 /** 清除所有已完成事项 */
 function clearCompleted() {
+    cancelEdit();
     todos = todos.filter(function (t) { return !t.completed; });
     render();
 }
@@ -50,6 +52,40 @@ function clearCompleted() {
 /** 生成唯一 ID */
 function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// ===== 功能 7：编辑事项 =====
+/** 进入编辑模式 */
+function startEdit(id) {
+    editingId = id;
+    render();
+    // 渲染完成后聚焦输入框
+    setTimeout(function () {
+        var editInput = document.querySelector('.edit-input');
+        if (editInput) {
+            editInput.focus();
+            editInput.select();
+        }
+    }, 0);
+}
+
+/** 保存编辑：验证非空 → 更新文字 → 退出编辑 */
+function saveEdit(id, newText) {
+    var trimmed = newText.trim();
+    if (!trimmed) return;  // 空内容不保存，相当于取消
+    var todo = todos.find(function (t) { return t.id === id; });
+    if (todo) {
+        todo.text = trimmed;
+    }
+    editingId = null;
+    render();  // render 里会调用 saveTodos
+}
+
+/** 取消编辑 */
+function cancelEdit() {
+    if (editingId === null) return;  // 不在编辑状态，无需操作
+    editingId = null;
+    render();
 }
 
 // ===== 功能 3：删除事项（占位，下一步实现） =====
@@ -120,18 +156,29 @@ function render() {
     }
 
     filtered.forEach(function (todo) {
-        const li = document.createElement('li');
+        var li = document.createElement('li');
         li.className = 'todo-item';
         if (todo.completed) {
             li.classList.add('completed');
         }
-        li.innerHTML = `
-            <button class="toggle-btn" data-id="${todo.id}">
-                ${todo.completed ? '✅' : '⬜'}
-            </button>
-            <span class="todo-text">${escapeHtml(todo.text)}</span>
-            <button class="delete-btn" data-id="${todo.id}">🗑</button>
-        `;
+
+        // 编辑模式：替换为输入框 + 确定/取消按钮
+        if (todo.id === editingId) {
+            li.classList.add('editing');
+            li.innerHTML = ''
+                + '<input class="edit-input" value="' + escapeHtml(todo.text) + '" data-id="' + todo.id + '">'
+                + '<button class="confirm-btn" data-id="' + todo.id + '">✅</button>'
+                + '<button class="cancel-btn">❌</button>';
+        } else {
+            li.innerHTML = ''
+                + '<button class="toggle-btn" data-id="' + todo.id + '">'
+                +   (todo.completed ? '✅' : '⬜')
+                + '</button>'
+                + '<span class="todo-text">' + escapeHtml(todo.text) + '</span>'
+                + '<button class="edit-btn" data-id="' + todo.id + '">✏️</button>'
+                + '<button class="delete-btn" data-id="' + todo.id + '">🗑</button>';
+        }
+
         todoList.appendChild(li);
     });
 
@@ -158,28 +205,62 @@ todoInput.addEventListener('keydown', function (event) {
     }
 });
 
-// 筛选按钮：点击切换筛选
+// 筛选按钮：点击切换筛选（有编辑状态时先退出）
 document.querySelectorAll('.filter-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
+        cancelEdit();
         currentFilter = btn.getAttribute('data-filter');
         render();
     });
 });
 
-// 列表内的事件委托：处理勾选和删除按钮的点击
+// 列表内的事件委托：处理所有按钮点击
 todoList.addEventListener('click', function (event) {
-    const target = event.target;
-    const id = target.getAttribute('data-id');
+    var target = event.target;
+    var id = target.getAttribute('data-id');
+
+    // 编辑模式下的"取消"按钮（无 data-id）
+    if (target.classList.contains('cancel-btn')) {
+        cancelEdit();
+        return;
+    }
+
     if (!id) return;
 
-    // 点击的是勾选按钮 → 切换完成状态
+    // 勾选按钮
     if (target.classList.contains('toggle-btn')) {
         toggleTodo(id);
     }
 
-    // 点击的是删除按钮 → 删除事项
+    // 删除按钮
     if (target.classList.contains('delete-btn')) {
         deleteTodo(id);
+    }
+
+    // 编辑按钮 → 进入编辑模式
+    if (target.classList.contains('edit-btn')) {
+        startEdit(id);
+    }
+
+    // 确定按钮 → 保存编辑
+    if (target.classList.contains('confirm-btn')) {
+        var editInput = document.querySelector('.edit-input');
+        if (editInput) {
+            saveEdit(id, editInput.value);
+        }
+    }
+});
+
+// 编辑输入框的键盘事件：回车保存，Esc 取消
+todoList.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+        var editInput = document.querySelector('.edit-input');
+        if (editInput) {
+            saveEdit(editInput.getAttribute('data-id'), editInput.value);
+        }
+    }
+    if (event.key === 'Escape') {
+        cancelEdit();
     }
 });
 
