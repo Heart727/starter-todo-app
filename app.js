@@ -10,6 +10,7 @@ const todoList = document.getElementById('todoList');
 const counter = document.getElementById('counter');
 const storageNote = document.querySelector('.storage-note');
 const storageMessage = document.getElementById('storageMessage');
+const resetStorageBtn = document.getElementById('resetStorage');
 
 // ===== 数据存储（内存 + localStorage） =====
 const STORAGE_KEY = 'todo-app-data';
@@ -17,31 +18,45 @@ const STORAGE_KEY = 'todo-app-data';
 let todos = [];               // 每个 todo: { id, text, completed }
 let currentFilter = 'all';    // 当前筛选：'all' | 'active' | 'completed'
 let editingId = null;         // 当前正在编辑的事项 ID（null = 无）
+let storageReadBlocked = false;
+let storageCorrupt = false;
 
 // ===== 功能 6：数据持久化 =====
 /** 从 localStorage 加载数据 */
 function loadTodos() {
+    let saved;
     try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            // 防止数据格式异常导致页面报错
-            todos = Array.isArray(parsed) ? parsed.filter(function (todo) {
-                return todo && typeof todo.id === 'string'
-                    && /^[a-zA-Z0-9_-]{1,64}$/.test(todo.id)
-                    && typeof todo.text === 'string'
-                    && typeof todo.completed === 'boolean';
-            }) : [];
-        }
+        saved = localStorage.getItem(STORAGE_KEY);
     } catch (e) {
-        // 隐私模式或浏览器策略可能禁用本地存储，要让用户知道刷新后无法保留。
-        todos = [];
-        setStorageWarning('此浏览器不允许读取本地数据，刷新页面后待办可能无法保留。');
+        // 无法读取时不把空列表写回，以免覆盖浏览器里仍可恢复的数据。
+        storageReadBlocked = true;
+        setStorageWarning('此浏览器不允许读取本地数据，当前更改不会保存。');
+        return;
+    }
+
+    if (saved === null) return;
+
+    try {
+        const parsed = JSON.parse(saved);
+        const isValidList = Array.isArray(parsed) && parsed.every(function (todo) {
+            return todo && typeof todo.id === 'string'
+                && /^[a-zA-Z0-9_-]{1,64}$/.test(todo.id)
+                && typeof todo.text === 'string'
+                && typeof todo.completed === 'boolean';
+        });
+        if (!isValidList) throw new Error('本地待办格式不匹配');
+        todos = parsed;
+    } catch (e) {
+        // 保留损坏或旧版本的数据，等待用户明确选择是否清除。
+        storageCorrupt = true;
+        resetStorageBtn.hidden = false;
+        setStorageWarning('本地待办格式异常，原始数据已保留。确认清除后才能继续保存新任务。');
     }
 }
 
 /** 保存数据到 localStorage */
 function saveTodos() {
+    if (storageReadBlocked || storageCorrupt) return;
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
         storageNote.classList.remove('warning');
@@ -283,6 +298,21 @@ todoList.addEventListener('keydown', function (event) {
 // 「清除已完成」按钮
 document.getElementById('clearCompleted').addEventListener('click', function () {
     clearCompleted();
+});
+
+resetStorageBtn.addEventListener('click', function () {
+    if (!window.confirm('将删除此浏览器中无法读取的原始待办数据，并重新开始。确定继续吗？')) return;
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+        todos = [];
+        storageCorrupt = false;
+        resetStorageBtn.hidden = true;
+        storageNote.classList.remove('warning');
+        storageMessage.textContent = '不会上传服务器，也不会自动同步到其他设备。';
+        render();
+    } catch (e) {
+        setStorageWarning('无法清除本地数据；原始内容仍保留，请检查浏览器存储设置。');
+    }
 });
 
 // ===== 启动：加载数据 → 首次渲染 =====

@@ -24,10 +24,13 @@ h1 { color: var(--ink); font-size: 23px; letter-spacing: -.045em; }
 .subheading { margin: 12px 0 0 54px; color: var(--muted); font-size: 12px; }
 .storage-note { display: flex; align-items: flex-start; gap: 10px; padding: 11px 12px; border: 1px solid #e4eae3; border-radius: 11px; background: #f7f9f6; }
 .storage-icon { flex: none; color: var(--green); font-size: 14px; line-height: 1.2; }
+.storage-content { flex: 1; min-width: 0; }
 .storage-note p { display: flex; flex-wrap: wrap; gap: 4px 8px; color: var(--muted); font-size: 10px; line-height: 1.55; }
 .storage-note strong { color: #3c5548; font-size: 10px; }
 .storage-note.warning { border-color: #f0d8ca; background: #fff7f1; }
 .storage-note.warning .storage-icon, .storage-note.warning strong { color: #9a4b34; }
+.reset-storage-btn { margin-top: 8px; padding: 5px 8px; border: 1px solid #e7c5b8; border-radius: 6px; background: #fff; color: #914a37; font-size: 10px; cursor: pointer; }
+.reset-storage-btn:hover { border-color: #c9846d; background: #fffaf7; }
 .input-area { display: flex; gap: 9px; padding: 6px; border: 1px solid #dce4dc; border-radius: 12px; background: #fafbf9; transition: .16s ease; }
 .input-area:focus-within { border-color: #9cbfac; box-shadow: 0 0 0 3px #176b5810; }
 .input-area input { flex: 1; min-width: 0; padding: 0 10px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 14px; }

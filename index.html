@@ -23,7 +23,10 @@
 
         <div class="storage-note" role="note" aria-live="polite">
             <span class="storage-icon" aria-hidden="true">◉</span>
-            <p><strong>只保存在这个浏览器</strong><span id="storageMessage">不会上传服务器，也不会自动同步到其他设备。</span></p>
+            <div class="storage-content">
+                <p><strong>只保存在这个浏览器</strong><span id="storageMessage">不会上传服务器，也不会自动同步到其他设备。</span></p>
+                <button id="resetStorage" class="reset-storage-btn" type="button" hidden>清除异常数据并重新开始</button>
+            </div>
         </div>
 
         <!-- 输入区域 -->
