@@ -3,38 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>待办清单</title>
+    <meta name="theme-color" content="#f3f5f2">
+    <meta name="description" content="轻量、清晰的中文待办清单。无需注册，数据保存在当前浏览器。">
+    <title>今日清单 · 待办</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <!-- 头部标题 -->
-        <header>
-            <h1>📋 待办清单</h1>
+        <header class="app-header">
+            <div class="heading-lockup">
+                <span class="brand-mark" aria-hidden="true">✓</span>
+                <div>
+                    <p class="eyebrow">A LITTLE MORE FOCUSED</p>
+                    <h1>今日清单</h1>
+                </div>
+            </div>
+            <p class="subheading">把注意力留给眼前这一件。</p>
         </header>
+
+        <div class="storage-note" role="note" aria-live="polite">
+            <span class="storage-icon" aria-hidden="true">◉</span>
+            <p><strong>只保存在这个浏览器</strong><span id="storageMessage">不会上传服务器，也不会自动同步到其他设备。</span></p>
+        </div>
 
         <!-- 输入区域 -->
         <div class="input-area">
-            <input type="text" id="todoInput" placeholder="输入新的待办事项..." maxlength="100">
-            <button id="addBtn">添加</button>
+            <input type="text" id="todoInput" placeholder="接下来要做什么？" maxlength="100" aria-label="新的待办事项">
+            <button id="addBtn" type="button">添加 <span aria-hidden="true">＋</span></button>
         </div>
 
         <!-- 筛选按钮 -->
-        <div class="filter-area">
-            <button class="filter-btn active" data-filter="all">全部</button>
-            <button class="filter-btn" data-filter="active">未完成</button>
-            <button class="filter-btn" data-filter="completed">已完成</button>
+        <div class="filter-area" role="group" aria-label="筛选待办事项">
+            <button class="filter-btn active" data-filter="all" aria-pressed="true">全部</button>
+            <button class="filter-btn" data-filter="active" aria-pressed="false">未完成</button>
+            <button class="filter-btn" data-filter="completed" aria-pressed="false">已完成</button>
         </div>
 
         <!-- 待办列表 -->
-        <ul id="todoList" class="todo-list">
+        <ul id="todoList" class="todo-list" aria-label="待办事项" aria-live="polite">
             <!-- 动态生成 -->
         </ul>
 
         <!-- 底部状态栏 -->
         <footer class="status-bar">
-            <span id="counter">剩余 0 项</span>
-            <button id="clearCompleted" class="clear-btn">清除已完成</button>
+            <span id="counter" aria-live="polite">剩余 0 项</span>
+            <button id="clearCompleted" class="clear-btn" type="button">清除已完成</button>
         </footer>
     </div>
 

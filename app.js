@@ -8,6 +8,8 @@ const todoInput = document.getElementById('todoInput');
 const addBtn = document.getElementById('addBtn');
 const todoList = document.getElementById('todoList');
 const counter = document.getElementById('counter');
+const storageNote = document.querySelector('.storage-note');
+const storageMessage = document.getElementById('storageMessage');
 
 // ===== 数据存储（内存 + localStorage） =====
 const STORAGE_KEY = 'todo-app-data';
@@ -24,11 +26,17 @@ function loadTodos() {
         if (saved) {
             const parsed = JSON.parse(saved);
             // 防止数据格式异常导致页面报错
-            todos = Array.isArray(parsed) ? parsed : [];
+            todos = Array.isArray(parsed) ? parsed.filter(function (todo) {
+                return todo && typeof todo.id === 'string'
+                    && /^[a-zA-Z0-9_-]{1,64}$/.test(todo.id)
+                    && typeof todo.text === 'string'
+                    && typeof todo.completed === 'boolean';
+            }) : [];
         }
     } catch (e) {
-        // 数据损坏时静默重置
+        // 隐私模式或浏览器策略可能禁用本地存储，要让用户知道刷新后无法保留。
         todos = [];
+        setStorageWarning('此浏览器不允许读取本地数据，刷新页面后待办可能无法保留。');
     }
 }
 
@@ -36,9 +44,16 @@ function loadTodos() {
 function saveTodos() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+        storageNote.classList.remove('warning');
+        storageMessage.textContent = '不会上传服务器，也不会自动同步到其他设备。';
     } catch (e) {
-        // 存储满时忽略（极少发生）
+        setStorageWarning('浏览器无法保存数据；刷新或关闭页面后，待办可能丢失。');
     }
+}
+
+function setStorageWarning(message) {
+    storageNote.classList.add('warning');
+    storageMessage.textContent = message;
 }
 
 /** 清除所有已完成事项 */
@@ -139,6 +154,7 @@ function render() {
     // 先更新筛选按钮的高亮状态
     document.querySelectorAll('.filter-btn').forEach(function (btn) {
         btn.classList.toggle('active', btn.getAttribute('data-filter') === currentFilter);
+        btn.setAttribute('aria-pressed', btn.getAttribute('data-filter') === currentFilter ? 'true' : 'false');
     });
 
     // 更新剩余未完成数量（功能 5）
@@ -166,17 +182,17 @@ function render() {
         if (todo.id === editingId) {
             li.classList.add('editing');
             li.innerHTML = ''
-                + '<input class="edit-input" value="' + escapeHtml(todo.text) + '" data-id="' + todo.id + '">'
-                + '<button class="confirm-btn" data-id="' + todo.id + '">✅</button>'
-                + '<button class="cancel-btn">❌</button>';
+                + '<input class="edit-input" type="text" maxlength="100" aria-label="编辑待办事项" value="' + escapeHtml(todo.text) + '" data-id="' + todo.id + '">'
+                + '<button class="confirm-btn" type="button" aria-label="保存修改" title="保存" data-id="' + todo.id + '">✓</button>'
+                + '<button class="cancel-btn" type="button" aria-label="取消修改" title="取消">×</button>';
         } else {
             li.innerHTML = ''
-                + '<button class="toggle-btn" data-id="' + todo.id + '">'
-                +   (todo.completed ? '✅' : '⬜')
+                + '<button class="toggle-btn" type="button" aria-label="' + (todo.completed ? '标记为未完成' : '标记为已完成') + '" aria-pressed="' + (todo.completed ? 'true' : 'false') + '" data-id="' + todo.id + '">'
+                +   (todo.completed ? '✓' : '○')
                 + '</button>'
                 + '<span class="todo-text">' + escapeHtml(todo.text) + '</span>'
-                + '<button class="edit-btn" data-id="' + todo.id + '">✏️</button>'
-                + '<button class="delete-btn" data-id="' + todo.id + '">🗑</button>';
+                + '<button class="edit-btn" type="button" aria-label="编辑：' + escapeHtml(todo.text) + '" title="编辑" data-id="' + todo.id + '">✎</button>'
+                + '<button class="delete-btn" type="button" aria-label="删除：' + escapeHtml(todo.text) + '" title="删除" data-id="' + todo.id + '">×</button>';
         }
 
         todoList.appendChild(li);
